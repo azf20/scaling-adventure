@@ -33,3 +33,11 @@ modules:
     valueType: int64
     inputs:
       - map: map_transfers
+
+  - name: store_supply
+    kind: store
+    initialBlock: 12287507
+    updatePolicy: add
+    valueType: int64
+    inputs:
+      - map: map_transfers

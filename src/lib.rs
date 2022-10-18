@@ -17,12 +17,11 @@ fn map_transfers(blk: eth::Block) -> Result<erc721::Transfers, substreams::error
         transfers: blk
             .events::<abi::erc721::events::Transfer>(&[&TRACKED_CONTRACT])
             .map(|(transfer, log)| {
-                substreams::log::info!("NFT Transfer seen");
 
                 erc721::Transfer {
-                    trx_hash: log.receipt.transaction.hash.clone(),
-                    from: transfer.from,
-                    to: transfer.to,
+                    trx_hash: Hex(log.receipt.transaction.hash.clone()).to_string(),
+                    from: Hex(&transfer.from).to_string(),
+                    to: Hex(&transfer.to).to_string(),
                     token_id: transfer.token_id.low_u64(),
                     ordinal: log.block_index() as u64,
                 }
@@ -36,18 +35,30 @@ fn map_transfers(blk: eth::Block) -> Result<erc721::Transfers, substreams::error
 fn store_transfers(transfers: erc721::Transfers, s: store::StoreAddInt64) {
     log::info!("NFT holders state builder");
     for transfer in transfers.transfers {
-        if transfer.from != NULL_ADDRESS {
-            log::info!("Found a transfer out {}", Hex(&transfer.trx_hash));
+        if transfer.from != Hex(&NULL_ADDRESS).to_string() {
+            log::info!("Found transfer out {}", transfer.trx_hash);
             s.add(transfer.ordinal, generate_key(&transfer.from), -1);
         }
 
-        if transfer.to != NULL_ADDRESS {
-            log::info!("Found a transfer in {}", Hex(&transfer.trx_hash));
+        if transfer.to != Hex(&NULL_ADDRESS).to_string() {
+            log::info!("Found transfer in {}", transfer.trx_hash);
             s.add(transfer.ordinal, generate_key(&transfer.to), 1);
         }
     }
 }
 
-fn generate_key(holder: &Vec<u8>) -> String {
-    return format!("total:{}:{}", Hex(holder), Hex(TRACKED_CONTRACT));
+fn generate_key(holder: &String) -> String {
+    return format!("total:{}:{}", holder, Hex(TRACKED_CONTRACT));
+}
+
+/// Store the total balance of NFT tokens for the specific TRACKED_CONTRACT by holder
+#[substreams::handlers::store]
+fn store_supply(transfers: erc721::Transfers, s: store::StoreAddInt64) {
+    log::info!("Supply state builder");
+    for transfer in transfers.transfers {
+        if transfer.from == Hex(&NULL_ADDRESS).to_string() {
+            log::info!("Found mint event {}", transfer.trx_hash);
+            s.add(transfer.ordinal, "supply", 1);
+        }
+    }
 }
