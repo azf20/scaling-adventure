@@ -187,3 +187,63 @@ Congratulations! You've successfully run a Substream.
 
 - Read the documentation at https://github.com/streamingfast/substreams under _Documentation_.
 - Look at [Playground](https://github.com/streamingfast/substreams-playground) for more learning examples.
+
+# Integrating with Graph Node
+
+- Create ./schema.graphql
+
+Current pattern maps each entity based on the table name, then bundle together at the end.
+Add EntityChanges as a dependency:
+```
+substreams-entity-change = "0.2.0"
+```
+Add new handler in lib.rs which maps transfers to EntityChanges
+This uses a helper from db.rs which inserts transfers
+Also upgraded substreams
+Add this to the substreams.yaml
+
+Add "graph_out" mapper & add it to the yaml
+
+```
+substreams pack substreams.yaml
+```
+
+Fork graph-node-dev, run postgres & ipfs:
+```
+./up.sh -c
+```
+
+Run Graph Node with the following:
+```
+GRAPH_LOG=debug cargo run -- --config  ../../streamingFast/graph-node-dev/config/eth-mainnet-substreams.toml --ipfs "localhost:5001"
+```
+
+
+Copied `resolve_uniswap.sh` from graph-node-dev and renamed to `resolve.sh`
+*Edited to make the spkg file a command line argument*
+*Make sure IPFS is installed*
+
+Resolve to create the subgraph.yaml, pin to ipfs:
+./resolve.sh subgraph.yaml schema.graphql substreams-template-v0.1.0.spkg
+
+Then run the two printed commands to create & then deploy the subgraph
+```
+Cleaning up (subgraph_resolved.yaml)
+Packing Substreams
+Substreams spkg is ready substreams-template-v0.1.0.spkg
+
+Adding schema schema.graphql to IPFS
+GraphQL schema cid QmPauMh23jcRgV5a5Rf1CSJiVuneDKBWXgLxeMGiW3fGrv
+
+Adding spkg substreams-template-v0.1.0.spkg to IPFS
+SPKG cid QmfHX8ScHCoUWiYkJrwVRc3wvyShyCSsFWfXqMiyiyjL7K
+
+Output resolved subgraph manifest: subgraph_resolved.yaml
+Resolved manifest has been uploaded to ipfs QmWfPTi641bCKMuqg1BxN1TTLeoPpKaXpLrWWC6g674rFW
+Run the following command to upload to your graph-node:
+
+curl -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\", \"id\":\"2.0\",\"method\":\"subgraph_create\",\"params\":{\"name\":\"QmWfPTi641bCKMuqg1BxN1TTLeoPpKaXpLrWWC6g674rFW\"}}" http://127.0.0.1:8020
+curl -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\", \"id\":\"2.0\",\"method\":\"subgraph_deploy\",\"params\":{\"name\":\"QmWfPTi641bCKMuqg1BxN1TTLeoPpKaXpLrWWC6g674rFW\",\"ipfs_hash\":\"QmWfPTi641bCKMuqg1BxN1TTLeoPpKaXpLrWWC6g674rFW\",\"version_label\": \"1\"}}" http://127.0.0.1:8020
+adamfuller@MacBook-Air-4 scaling-adventure % curl -H "Content-Type: application/json" -d "{\"jsonrpc\":\"2.0\", \"id\":\"2.0\",\"method\":\"subgraph_create\",\"params\":{\"name\":\"QmWfPTi641bCKMuqg1BxN1TTLeoPpKaXpLrWWC6g674rFW\"}}" http://127.0.0.1:8020
+
+```

@@ -1,9 +1,12 @@
 mod abi;
 mod pb;
+mod db;
 use hex_literal::hex;
 use pb::erc721;
 use substreams::{log, store, Hex};
 use substreams_ethereum::{pb::eth::v2 as eth, NULL_ADDRESS};
+use substreams_entity_change::pb::entity::{EntityChanges};
+use substreams::prelude::*;
 
 // Bored Ape Club Contract
 const TRACKED_CONTRACT: [u8; 20] = hex!("bc4ca0eda7647a8ab7c2061c2e118a18a936f13d");
@@ -28,6 +31,15 @@ fn map_transfers(blk: eth::Block) -> Result<erc721::Transfers, substreams::error
             })
             .collect(),
     })
+}
+
+#[substreams::handlers::map]
+pub fn map_transfer_data_entities(
+    transfers: erc721::Transfers,
+) -> Result<EntityChanges, substreams::errors::Error> {
+    let mut entity_changes: EntityChanges = Default::default();
+    db::transfer_entity_change(&mut entity_changes, transfers);
+    Ok(entity_changes)
 }
 
 /// Store the total balance of NFT tokens for the specific TRACKED_CONTRACT by holder
@@ -61,4 +73,16 @@ fn store_supply(transfers: erc721::Transfers, s: store::StoreAddInt64) {
             s.add(transfer.ordinal, "supply", 1);
         }
     }
+}
+
+#[substreams::handlers::map]
+pub fn graph_out(
+    transfer_entities: EntityChanges,
+) -> Result<EntityChanges, substreams::errors::Error> {
+    Ok(EntityChanges {
+        entity_changes: [
+            transfer_entities.entity_changes
+        ]
+        .concat(),
+    })
 }

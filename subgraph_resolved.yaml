@@ -1,0 +1,19 @@
+specVersion: 0.0.2
+description: Tracking Blocks And Transactions on ETH Mainnet network
+repository: https://github.com/streamingfast/graph-node-dev.git
+schema:
+  file:
+    /: /ipfs/QmS9z82J9N91JcUbxkGjrXsvYD9xS1MnXmmpZTY2XUKZLP
+
+dataSources:
+  - kind: substreams
+    name: Network
+    network: mainnet
+    source:
+      package:
+        moduleName: graph_out
+        file:
+          /: /ipfs/QmfHX8ScHCoUWiYkJrwVRc3wvyShyCSsFWfXqMiyiyjL7K
+    mapping:
+      kind: substreams/graph-entities
+      apiVersion: 0.0.5

@@ -1,0 +1,17 @@
+type Transfer @entity {
+  id: ID!
+  from: String!
+  to: String!
+  token_id: BigInt!
+  trx_hash: String!
+}
+
+type User @entity {
+  id: ID!
+  count: Int!
+}
+
+type Supply @entity {
+  id: ID!
+  supply: Int!
+}
